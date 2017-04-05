@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
+
+
+	<flow name="SearchIsoCodeAndCountryForEnteredText">
+		<http:listener config-ref="HTTP_Listener_Configuration"
+			path="/" allowedMethods="GET" doc:name="HTTP" />
+        <set-variable variableName="requestPath" value="#['${webservice.path}?text='  + message.inboundProperties['http.query.params']['text']]" doc:name="Variable"/>
+		<flow-ref name="getListOfIsoCodesAndCountries" doc:name="getListOfIsoCodesAndCountries" />
+        <expression-component doc:name="Expression"><![CDATA[flowVars['currentServerTime'] = server.dateTime.format("yyyy-MM-dd").toString();
+flowVars['outputFileName'] = "${outputFileName}".concat(flowVars['currentServerTime']).concat(".json");]]></expression-component>
+        <file:outbound-endpoint path="${outputFileDirectory}" outputPattern="#[flowVars['outputFileName']]" responseTimeout="10000" doc:name="Save Response To File"/>
+        <catch-exception-strategy doc:name="Catch Exception Strategy">
+            <set-payload doc:name="Set Payload" value="#[{
+  &quot;RestResponse&quot; : {
+    &quot;messages&quot; : &quot;Server returned an error. Please try again later.&quot;,
+  }
+}]"/>
+            <json:object-to-json-transformer doc:name="Object to JSON"/>
+        </catch-exception-strategy>
+	</flow>
+
+	<sub-flow name="getListOfIsoCodesAndCountries">
+		<http:request config-ref="Webservice_Config" path="#[flowVars['requestPath']]"
+			method="GET" doc:name="HTTP" >
+            <http:request-builder>
+                <http:header headerName="Content-Type" value="application/json"/>
+            </http:request-builder>
+            <http:success-status-code-validator values="200"/>
+        </http:request>
+        <object-to-string-transformer doc:name="Object to String"/>
+	</sub-flow>
+
+
+</mule>

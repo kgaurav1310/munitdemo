@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:mock="http://www.mulesoft.org/schema/mule/mock" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:core="http://www.mulesoft.org/schema/mule/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/mock http://www.mulesoft.org/schema/mule/mock/current/mule-mock.xsd
+http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+	<munit:config name="munit" doc:name="MUnit configuration" />
+	<spring:beans>
+		<spring:import resource="classpath:munitdemo.xml" />
+		<spring:import resource="classpath:config.xml" />
+	</spring:beans>
+	<munit:test name="unit-testcase-1"
+		description="Unit Test case 1 - Validating calls to  sub-flow being done properly">
+        <munit:set payload="#[]" doc:name="Set Message">
+			<munit:inbound-properties>
+				<munit:inbound-property key="http.query.params"
+					value="#[['text':'IND']]" />
+			</munit:inbound-properties>
+		</munit:set>
+		<flow-ref name="SearchIsoCodeAndCountryForEnteredText"
+			doc:name="SearchIsoCodeAndCountryForEnteredText" />
+		<mock:verify-call messageProcessor="mule:sub-flow"
+			doc:name="Verify Call" times="1">
+            <mock:with-attributes>
+                <mock:with-attribute name="name" whereValue="#[matchContains('getListOfIsoCodesAndCountries')]"/>
+            </mock:with-attributes>
+		</mock:verify-call>
+	</munit:test>
+	
+	
+	<munit:test name="unit-testcase-2"
+		description="Unit Test case 2 - asserting the response from webservice">
+		<munit:set payload="#[]" doc:name="Set Message">
+			<munit:inbound-properties>
+				<munit:inbound-property key="http.query.params"
+					value="#[['text':'IND']]" />
+			</munit:inbound-properties>
+		</munit:set>
+		<set-variable variableName="requestPath"
+			value="#['${webservice.path}?text='  + message.inboundProperties['http.query.params']['text']]"
+			doc:name="Variable" />
+		<flow-ref name="getListOfIsoCodesAndCountries" doc:name="getListOfIsoCodesAndCountries" />
+		<munit:assert-true condition="#[message.inboundProperties['http.status'] == 200]"
+			doc:name="Assert True" message="#['Your code sucks!!!']"/>
+	</munit:test>
+</mule>

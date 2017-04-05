@@ -1,0 +1,18 @@
+{
+  "RestResponse" : {
+    "messages" : [ "More webservices are available at http://www.groupkt.com/post/f2129b88/services.htm", "Total [3] records found." ],
+    "result" : [ {
+      "name" : "British Indian Ocean Territory",
+      "alpha2_code" : "IO",
+      "alpha3_code" : "IOT"
+    }, {
+      "name" : "India",
+      "alpha2_code" : "IN",
+      "alpha3_code" : "IND"
+    }, {
+      "name" : "Indonesia",
+      "alpha2_code" : "ID",
+      "alpha3_code" : "IDN"
+    } ]
+  }
+}
